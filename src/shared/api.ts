@@ -1,8 +1,8 @@
-export type ApiProvider = "anthropic" | "openrouter" | "bedrock"
+export type ApiProvider = "anthropic" | "openrouter" | "bedrock" | "openai"
 
 export interface ApiHandlerOptions {
 	apiModelId?: ApiModelId
-	apiKey?: string // anthropic
+	apiKey?: string // anthropic or openai
 	openRouterApiKey?: string
 	awsAccessKey?: string
 	awsSecretKey?: string
@@ -25,7 +25,7 @@ export interface ModelInfo {
 	cacheReadsPrice?: number
 }
 
-export type ApiModelId = AnthropicModelId | OpenRouterModelId | BedrockModelId
+export type ApiModelId = AnthropicModelId | OpenRouterModelId | BedrockModelId | OpenAIModelId
 
 // Anthropic
 // https://docs.anthropic.com/en/docs/about-claude/models
@@ -66,7 +66,7 @@ export const anthropicModels = {
 		cacheWritesPrice: 0.3,
 		cacheReadsPrice: 0.03,
 	},
-} as const satisfies Record<string, ModelInfo> // as const assertion makes the object deeply readonly
+} as const satisfies Record<string, ModelInfo>
 
 // AWS Bedrock
 // https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html
@@ -157,45 +157,6 @@ export const openRouterModels = {
 		inputPrice: 10,
 		outputPrice: 30,
 	},
-	// llama 3.1 models cannot use tools yet
-	// "meta-llama/llama-3.1-405b-instruct": {
-	// 	maxTokens: 2048,
-	// 	supportsImages: false,
-	// 	inputPrice: 2.7,
-	// 	outputPrice: 2.7,
-	// },
-	// "meta-llama/llama-3.1-70b-instruct": {
-	// 	maxTokens: 2048,
-	// 	supportsImages: false,
-	// 	inputPrice: 0.52,
-	// 	outputPrice: 0.75,
-	// },
-	// "meta-llama/llama-3.1-8b-instruct": {
-	// 	maxTokens: 2048,
-	// 	supportsImages: false,
-	// 	inputPrice: 0.06,
-	// 	outputPrice: 0.06,
-	// },
-	// OpenRouter needs to fix mapping gemini 1.5 responses for tool calls properly, they return content with line breaks formatted wrong (too many escapes), and throw errors for being in the wrong order when they're not. They also cannot handle feedback given to a request with multiple tools. Giving feedback to one tool use requests works fine. ("Please ensure that function response turn comes immediately after a function call turn. And the number of function response parts should be equal to number of function call parts of the function call turn.")
-	// "google/gemini-pro-1.5": {
-	// 	maxTokens: 8192,
-	// 	supportsImages: false, // "Function Calling is not supported with non-text input"
-	// 	inputPrice: 2.5,
-	// 	outputPrice: 7.5,
-	// },
-	// "google/gemini-flash-1.5": {
-	// 	maxTokens: 8192,
-	// 	supportsImages: false, // "Function Calling is not supported with non-text input"
-	// 	inputPrice: 0.25,
-	// 	outputPrice: 0.75,
-	// },
-	// "google/gemini-pro": {
-	// 	maxTokens: 8192,
-	// 	supportsImages: false, // "Function Calling is not supported with non-text input"
-	// 	inputPrice: 0.125,
-	// 	outputPrice: 0.375,
-	// },
-	// while deepseek coder can use tools, it may sometimes send tool invocation as a text block
 	"deepseek/deepseek-coder": {
 		maxTokens: 4096,
 		supportsImages: false,
@@ -203,7 +164,6 @@ export const openRouterModels = {
 		inputPrice: 0.14,
 		outputPrice: 0.28,
 	},
-	// mistral models can use tools but aren't great at going step-by-step and proceeding to the next step
 	"mistralai/mistral-large": {
 		maxTokens: 8192,
 		supportsImages: false,
@@ -211,24 +171,38 @@ export const openRouterModels = {
 		inputPrice: 3,
 		outputPrice: 9,
 	},
-	// This model is not capable of complex system/tool prompts
-	// "mistralai/mistral-7b-instruct-v0.1": {
-	// 	maxTokens: 4096,
-	// 	supportsImages: false,
-	// 	inputPrice: 0.06,
-	// 	outputPrice: 0.06,
-	// },
-	// cohere models are not capable of complex system/tool prompts
-	// "cohere/command-r-plus": {
-	// 	maxTokens: 4000,
-	// 	supportsImages: false,
-	// 	inputPrice: 3,
-	// 	outputPrice: 15,
-	// },
-	// "cohere/command-r": {
-	// 	maxTokens: 4000,
-	// 	supportsImages: false,
-	// 	inputPrice: 0.5,
-	// 	outputPrice: 1.5,
-	// },
+} as const satisfies Record<string, ModelInfo>
+
+// OpenAI
+export type OpenAIModelId = keyof typeof openAIModels
+export const openAIDefaultModelId: OpenAIModelId = "gpt-4-1106-vision-preview"
+export const openAIModels = {
+	"gpt-4-1106-vision-preview": {
+		maxTokens: 16384,
+		supportsImages: true,
+		supportsPromptCache: false,
+		inputPrice: 10.0, // $10 per million input tokens
+		outputPrice: 30.0, // $30 per million output tokens
+	},
+	"gpt-4-turbo-preview": {
+		maxTokens: 16384,
+		supportsImages: false,
+		supportsPromptCache: false,
+		inputPrice: 10.0,
+		outputPrice: 30.0,
+	},
+	"gpt-4": {
+		maxTokens: 8192,
+		supportsImages: false,
+		supportsPromptCache: false,
+		inputPrice: 30.0,
+		outputPrice: 60.0,
+	},
+	"gpt-3.5-turbo": {
+		maxTokens: 4096,
+		supportsImages: false,
+		supportsPromptCache: false,
+		inputPrice: 0.5,
+		outputPrice: 1.5,
+	},
 } as const satisfies Record<string, ModelInfo>

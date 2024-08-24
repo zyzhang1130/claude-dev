@@ -17,6 +17,7 @@ Thanks to [Claude 3.5 Sonnet's agentic coding capabilities](https://www-cdn.anth
 -   Keep track of total tokens and API usage cost for the entire task loop and individual requests
 -   Set a maximum # of API requests allowed for a task before being prompted for permission to proceed
 -   When a task is completed, Claude determines if he can present the result to you with a terminal command like `open -a "Google Chrome" index.html`, which you run with a click of a button
+-   **New**: Support for OpenAI API, allowing you to use GPT models as an alternative to Claude
 
 _**Pro tip**: Use the `Cmd + Shift + P` shortcut to open the command palette and type `Claude Dev: Open In New Tab` to start a new task right in the editor._
 
@@ -54,6 +55,17 @@ By carefully managing what information is added to context, Claude can provide v
 Claude always asks for your permission first before any tools are executed or information is sent back to the API. This puts you in control of this agentic loop, every step of the way.
 
 ![image](https://github.com/saoudrizwan/claude-dev/assets/7799382/e6435441-9400-41c9-98a9-63f75c5d45be)
+
+## API Providers
+
+Claude Dev now supports multiple API providers:
+
+1. **Anthropic (Claude)**: The default provider, offering Claude 3.5 Sonnet and other Claude models.
+2. **OpenAI**: Now supported, allowing you to use GPT-4 and other OpenAI models.
+3. **AWS Bedrock**: For using AI models through Amazon Web Services.
+4. **OpenRouter**: An experimental option for accessing various AI models.
+
+You can choose your preferred API provider and model in the extension settings.
 
 ## Contribution
 
@@ -101,4 +113,4 @@ Contact me on X <a href="https://x.com/sdrzn" target="_blank">@sdrzn</a>. Please
 
 ## Acknowledgments
 
-Special thanks to Anthropic for providing the model that powers this extension.
+Special thanks to Anthropic for providing the model that powers this extension, and to the OpenAI team for their GPT models.

@@ -10,6 +10,8 @@ import {
 	bedrockModels,
 	openRouterDefaultModelId,
 	openRouterModels,
+	openAIDefaultModelId,
+	openAIModels,
 } from "../../../src/shared/api"
 
 interface ApiOptionsProps {
@@ -69,6 +71,7 @@ const ApiOptions: React.FC<ApiOptionsProps> = ({ showModelOptions, apiConfigurat
 					<VSCodeOption value="anthropic">Anthropic</VSCodeOption>
 					<VSCodeOption value="bedrock">AWS Bedrock</VSCodeOption>
 					<VSCodeOption value="openrouter">OpenRouter</VSCodeOption>
+					<VSCodeOption value="openai">OpenAI</VSCodeOption>
 				</VSCodeDropdown>
 			</div>
 
@@ -187,6 +190,29 @@ const ApiOptions: React.FC<ApiOptionsProps> = ({ showModelOptions, apiConfigurat
 				</div>
 			)}
 
+			{selectedProvider === "openai" && (
+				<div>
+					<VSCodeTextField
+						value={apiConfiguration?.apiKey || ""}
+						style={{ width: "100%" }}
+						onInput={handleInputChange("apiKey")}
+						placeholder="Enter API Key...">
+						<span style={{ fontWeight: 500 }}>OpenAI API Key</span>
+					</VSCodeTextField>
+					<p
+						style={{
+							fontSize: "12px",
+							marginTop: "5px",
+							color: "var(--vscode-descriptionForeground)",
+						}}>
+						This key is stored locally and only used to make API requests from this extension.
+						<VSCodeLink href="https://platform.openai.com/api-keys" style={{ display: "inline" }}>
+							You can get an OpenAI API key by signing up here.
+						</VSCodeLink>
+					</p>
+				</div>
+			)}
+
 			{showModelOptions && (
 				<>
 					<div className="dropdown-container">
@@ -196,6 +222,7 @@ const ApiOptions: React.FC<ApiOptionsProps> = ({ showModelOptions, apiConfigurat
 						{selectedProvider === "anthropic" && createDropdown(anthropicModels)}
 						{selectedProvider === "openrouter" && createDropdown(openRouterModels)}
 						{selectedProvider === "bedrock" && createDropdown(bedrockModels)}
+						{selectedProvider === "openai" && createDropdown(openAIModels)}
 					</div>
 
 					<ModelInfoView modelInfo={selectedModelInfo} />
@@ -299,6 +326,8 @@ export function normalizeApiConfiguration(apiConfiguration?: ApiConfiguration) {
 			return getProviderData(openRouterModels, openRouterDefaultModelId)
 		case "bedrock":
 			return getProviderData(bedrockModels, bedrockDefaultModelId)
+		case "openai":
+			return getProviderData(openAIModels, openAIDefaultModelId)
 	}
 }
 
