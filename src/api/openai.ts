@@ -4,6 +4,32 @@ import { v4 as uuidv4 } from 'uuid';  // UUID generation library
 import { ApiHandler } from ".";
 import { ApiConfiguration, ApiModelId, ModelInfo, OpenAIModelId, openAIModels } from "../shared/api";
 
+// Define the types for the content blocks
+interface TextBlockParam {
+    type: "text";
+    text: string;
+}
+
+interface ImageBlockParam {
+    type: "image";
+    source: {
+        media_type: string;
+        data: string;
+    };
+}
+
+interface ToolUseBlockParam {
+    type: "tool_use";
+    // other properties specific to tool use
+}
+
+interface ToolResultBlockParam {
+    type: "tool_result";
+    // other properties specific to tool result
+}
+
+type ContentBlockParam = TextBlockParam | ImageBlockParam | ToolUseBlockParam | ToolResultBlockParam;
+
 export class OpenAIHandler implements ApiHandler {
     private client: OpenAI;
     private model: OpenAIModelId;
@@ -20,7 +46,7 @@ export class OpenAIHandler implements ApiHandler {
         this.client = new OpenAI({
             apiKey: configuration.apiKey,
         });
-        this.model = (configuration.apiModelId as OpenAIModelId) || "gpt-4";
+        this.model = (configuration.apiModelId as OpenAIModelId) || "gpt-4o-2024-08-06";
 
         if (!openAIModels[this.model]) {
             console.error(`Invalid OpenAI model: ${this.model}`);
@@ -109,12 +135,7 @@ export class OpenAIHandler implements ApiHandler {
     }
 
     private convertContent(
-        content: Array<
-            | Anthropic.TextBlockParam
-            | Anthropic.ImageBlockParam
-            | Anthropic.ToolUseBlockParam
-            | Anthropic.ToolResultBlockParam
-        >
+        content: ContentBlockParam[]
     ): Array<{ type: "text" | "image_url"; text?: string; image_url?: { url: string } }> {
         console.log("Converting content for OpenAI");
 
@@ -129,7 +150,7 @@ export class OpenAIHandler implements ApiHandler {
                     // Convert tool use and result to text
                     return { type: "text", text: JSON.stringify(item) };
                 default:
-                    throw new Error(`Unsupported content type: ${item.type}`);
+                    throw new Error(`Unsupported content type: ${(item as ContentBlockParam).type}`);
             }
         });
     }

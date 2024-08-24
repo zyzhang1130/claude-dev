@@ -121,6 +121,7 @@
     "@types/diff": "^5.2.1",
     "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.82.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.11.0",
@@ -146,6 +147,7 @@
     "serialize-error": "^11.0.3",
     "tree-kill": "^1.2.2",
     "tree-sitter-wasms": "^0.1.11",
+    "uuid": "^10.0.0",
     "web-tree-sitter": "^0.22.6"
   }
 }
