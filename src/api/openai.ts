@@ -8,10 +8,19 @@ export class OpenAIHandler implements ApiHandler {
 	private model: string
 
 	constructor(configuration: ApiConfiguration) {
+		console.log("Initializing OpenAIHandler")
+		console.log("Configuration:", JSON.stringify(configuration))
+		
+		if (!configuration.apiKey) {
+			console.error("OpenAI API key is missing")
+			throw new Error("OpenAI API key is required")
+		}
+		
 		this.client = new OpenAI({
 			apiKey: configuration.apiKey,
 		})
 		this.model = configuration.model || "gpt-4-vision-preview"
+		console.log(`OpenAIHandler initialized with model: ${this.model}`)
 	}
 
 	async createMessage(
@@ -19,6 +28,7 @@ export class OpenAIHandler implements ApiHandler {
 		messages: Anthropic.Messages.MessageParam[],
 		tools: Anthropic.Messages.Tool[]
 	): Promise<Anthropic.Messages.Message> {
+		console.log("Creating message with OpenAI")
 		const openaiMessages = [
 			{ role: "system", content: systemPrompt },
 			...messages.map((msg) => ({
@@ -38,6 +48,7 @@ export class OpenAIHandler implements ApiHandler {
 		})
 
 		const choice = response.choices[0]
+		console.log("OpenAI response received")
 		return {
 			role: "assistant",
 			content: choice.message?.content || "",
@@ -58,6 +69,7 @@ export class OpenAIHandler implements ApiHandler {
 			| Anthropic.ToolResultBlockParam
 		>
 	): any {
+		console.log("Creating user readable request for OpenAI")
 		return {
 			model: this.model,
 			messages: [{ role: "user", content: this.convertContent(userContent) }],
@@ -65,6 +77,7 @@ export class OpenAIHandler implements ApiHandler {
 	}
 
 	getModel(): { id: ApiModelId; info: ModelInfo } {
+		console.log(`Getting model info for: ${this.model}`)
 		return {
 			id: this.model as ApiModelId,
 			info: {
@@ -83,6 +96,7 @@ export class OpenAIHandler implements ApiHandler {
 			| Anthropic.ToolResultBlockParam
 		>
 	): Array<{ type: "text" | "image_url"; text?: string; image_url?: { url: string } }> {
+		console.log("Converting content for OpenAI")
 		return content.map((item) => {
 			switch (item.type) {
 				case "text":

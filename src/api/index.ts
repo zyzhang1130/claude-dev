@@ -3,7 +3,7 @@ import { ApiConfiguration, ApiModelId, ModelInfo } from "../shared/api"
 import { AnthropicHandler } from "./anthropic"
 import { AwsBedrockHandler } from "./bedrock"
 import { OpenRouterHandler } from "./openrouter"
-import { OpenAIHandler } from "./openai" // Add this line
+import { OpenAIHandler } from "./openai"
 
 export interface ApiHandler {
 	createMessage(
@@ -26,18 +26,32 @@ export interface ApiHandler {
 
 export function buildApiHandler(configuration: ApiConfiguration): ApiHandler {
 	const { apiProvider, ...options } = configuration
+	console.log(`Building API handler for provider: ${apiProvider}`)
+	console.log(`Configuration options:`, JSON.stringify(options))
+	
+	let handler: ApiHandler
 	switch (apiProvider) {
 		case "anthropic":
-			return new AnthropicHandler(options)
+			handler = new AnthropicHandler(options)
+			break
 		case "openrouter":
-			return new OpenRouterHandler(options)
+			handler = new OpenRouterHandler(options)
+			break
 		case "bedrock":
-			return new AwsBedrockHandler(options)
-		case "openai": // Add this case
-			return new OpenAIHandler(options)
+			handler = new AwsBedrockHandler(options)
+			break
+		case "openai":
+			console.log("Creating OpenAIHandler")
+			handler = new OpenAIHandler(options)
+			console.log("OpenAIHandler created successfully")
+			break
 		default:
-			return new AnthropicHandler(options)
+			console.log("Using default AnthropicHandler")
+			handler = new AnthropicHandler(options)
 	}
+	
+	console.log("Handler built successfully")
+	return handler
 }
 
 export function withoutImageData(
