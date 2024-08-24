@@ -1,34 +1,8 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import OpenAI from "openai";
-import { v4 as uuidv4 } from 'uuid';  // UUID generation library
+import { v4 as uuidv4 } from 'uuid';
 import { ApiHandler } from ".";
 import { ApiConfiguration, ApiModelId, ModelInfo, OpenAIModelId, openAIModels } from "../shared/api";
-
-// Define the types for the content blocks
-interface TextBlockParam {
-    type: "text";
-    text: string;
-}
-
-interface ImageBlockParam {
-    type: "image";
-    source: {
-        media_type: string;
-        data: string;
-    };
-}
-
-interface ToolUseBlockParam {
-    type: "tool_use";
-    // other properties specific to tool use
-}
-
-interface ToolResultBlockParam {
-    type: "tool_result";
-    // other properties specific to tool result
-}
-
-type ContentBlockParam = TextBlockParam | ImageBlockParam | ToolUseBlockParam | ToolResultBlockParam;
 
 export class OpenAIHandler implements ApiHandler {
     private client: OpenAI;
@@ -46,7 +20,7 @@ export class OpenAIHandler implements ApiHandler {
         this.client = new OpenAI({
             apiKey: configuration.apiKey,
         });
-        this.model = (configuration.apiModelId as OpenAIModelId) || "gpt-4o-2024-08-06";
+        this.model = (configuration.apiModelId as OpenAIModelId) || "gpt-4-0613";
 
         if (!openAIModels[this.model]) {
             console.error(`Invalid OpenAI model: ${this.model}`);
@@ -62,50 +36,20 @@ export class OpenAIHandler implements ApiHandler {
     ): Promise<Anthropic.Messages.Message> {
         console.log("Creating message with OpenAI");
 
-        const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-            { role: "system", content: systemPrompt },
-            ...messages.map((msg) => {
-                let content: string;
-
-                if (Array.isArray(msg.content)) {
-                    content = this.convertContent(msg.content).map(item => item.text || item.image_url?.url).join("\n");
-                } else {
-                    content = msg.content as string;  // If it's already a string, use it directly
-                }
-
-                return {
-                    role: msg.role === "assistant" ? "assistant" : "user",
-                    content: content,
-                } as OpenAI.Chat.Completions.ChatCompletionMessageParam;
-            }),
-        ];
+        const openaiMessages = this.convertToOpenAIMessages(systemPrompt, messages);
+        const openaiTools = this.convertToOpenAITools(tools);
 
         const response = await this.client.chat.completions.create({
             model: this.model,
             messages: openaiMessages,
-            functions: tools.map((tool) => ({
-                name: tool.name, 
-                description: tool.description, 
-                // parameters: tool.parameters, // Commented out since not directly needed
-            })),
+            tools: openaiTools,
+            tool_choice: "auto",
         });
 
         const choice = response.choices[0];
         console.log("OpenAI response received");
 
-        return {
-            id: uuidv4(),  // Generate a unique ID
-            role: "assistant",
-            content: this.convertToContentBlock(choice.message?.content || ""),
-            model: this.model,
-            stop_reason: this.mapFinishReason(choice.finish_reason),
-            stop_sequence: null,  // Set an appropriate value if needed
-            type: "message",  // Assuming 'message' is the correct type
-            usage: {
-                input_tokens: response.usage?.prompt_tokens || 0,
-                output_tokens: response.usage?.completion_tokens || 0,
-            },
-        } as Anthropic.Messages.Message;
+        return this.convertToAnthropicMessage(response, choice);
     }
 
     createUserReadableRequest(
@@ -134,8 +78,95 @@ export class OpenAIHandler implements ApiHandler {
         };
     }
 
+    private convertToOpenAIMessages(
+        systemPrompt: string,
+        messages: Anthropic.Messages.MessageParam[]
+    ): OpenAI.Chat.ChatCompletionMessageParam[] {
+        const openaiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+            { role: "system", content: systemPrompt },
+        ];
+    
+        for (const msg of messages) {
+            if (typeof msg.content === "string") {
+                openaiMessages.push({ role: msg.role, content: msg.content });
+            } else if (Array.isArray(msg.content)) {
+                const content = msg.content.map(item => {
+                    if (item.type === "text") {
+                        return item.text;
+                    }
+                    if (item.type === "image") {
+                        return `[Image: data:${item.source.media_type};base64,${item.source.data}]`;
+                    }
+                    if (item.type === "tool_use") {
+                        return `[Tool Use: ${item.name}]`;
+                    }
+                    if (item.type === "tool_result") {
+                        return `[Tool Result: ${JSON.stringify(item.content)}]`;
+                    }
+                    return "";
+                }).join("\n");
+    
+                openaiMessages.push({ role: msg.role, content });
+            }
+        }
+    
+        return openaiMessages;
+    }
+
+    private convertToOpenAITools(tools: Anthropic.Messages.Tool[]): OpenAI.Chat.ChatCompletionTool[] {
+        return tools.map(tool => ({
+            type: "function",
+            function: {
+                name: tool.name,
+                description: tool.description,
+                parameters: tool.input_schema,
+            },
+        }));
+    }
+
+    private convertToAnthropicMessage(
+        response: OpenAI.Chat.Completions.ChatCompletion,
+        choice: OpenAI.Chat.Completions.ChatCompletion.Choice
+    ): Anthropic.Messages.Message {
+        const content: Anthropic.Messages.ContentBlock[] = [];
+
+        if (choice.message?.content) {
+            content.push({ type: "text", text: choice.message.content });
+        }
+
+        if (choice.message?.tool_calls) {
+            for (const toolCall of choice.message.tool_calls) {
+                content.push({
+                    type: "tool_use",
+                    id: toolCall.id,
+                    name: toolCall.function.name,
+                    input: JSON.parse(toolCall.function.arguments || "{}"),
+                } as Anthropic.ToolUseBlock);
+            }
+        }
+
+        return {
+            id: uuidv4(),
+            role: "assistant",
+            content,
+            model: this.model,
+            stop_reason: this.mapFinishReason(choice.finish_reason),
+            stop_sequence: null,
+            type: "message",
+            usage: {
+                input_tokens: response.usage?.prompt_tokens || 0,
+                output_tokens: response.usage?.completion_tokens || 0,
+            },
+        } as Anthropic.Messages.Message;
+    }
+
     private convertContent(
-        content: ContentBlockParam[]
+        content: Array<
+            | Anthropic.TextBlockParam
+            | Anthropic.ImageBlockParam
+            | Anthropic.ToolUseBlockParam
+            | Anthropic.ToolResultBlockParam
+        >
     ): Array<{ type: "text" | "image_url"; text?: string; image_url?: { url: string } }> {
         console.log("Converting content for OpenAI");
 
@@ -146,34 +177,22 @@ export class OpenAIHandler implements ApiHandler {
                 case "image":
                     return { type: "image_url", image_url: { url: `data:${item.source.media_type};base64,${item.source.data}` } };
                 case "tool_use":
+                    return { type: "text", text: `[Tool Use: ${item.name}]` };
                 case "tool_result":
-                    // Convert tool use and result to text
-                    return { type: "text", text: JSON.stringify(item) };
+                    return { type: "text", text: `[Tool Result: ${JSON.stringify(item.content)}]` };
                 default:
-                    throw new Error(`Unsupported content type: ${(item as ContentBlockParam).type}`);
+                    throw new Error(`Unsupported content type: ${(item as any).type}`);
             }
         });
     }
 
-    private convertToContentBlock(content: string): Anthropic.Messages.ContentBlock[] {
-        // Assuming ContentBlock is an object with a `type` and `text` field
-        return [{ type: "text", text: content }];
-    }
-
-    private mapFinishReason(finishReason: string): "tool_use" | "end_turn" | "max_tokens" | "stop_sequence" | null {
-        // Map OpenAI finish_reason to Anthropic stop_reason
+    private mapFinishReason(finishReason: string | null): "tool_use" | "end_turn" | "max_tokens" | "stop_sequence" | null {
         switch (finishReason) {
-            case "stop":
-            case "length":
-            case "max_tokens":
-                return "max_tokens"; // Example mapping, adjust as needed
-            case "tool_calls":
-            case "function_call":
-                return "tool_use";
-            case "content_filter":
-                return "stop_sequence"; // Adjust based on actual mapping
-            default:
-                return null; // Or another default appropriate value
+            case "stop": return "end_turn";
+            case "length": return "max_tokens";
+            case "tool_calls": return "tool_use";
+            case "content_filter": return "stop_sequence";
+            default: return null;
         }
     }
 }
