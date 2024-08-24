@@ -1,11 +1,11 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 import { ApiHandler } from "."
-import { ApiConfiguration, ApiModelId, ModelInfo } from "../shared/api"
+import { ApiConfiguration, ApiModelId, ModelInfo, OpenAIModelId, openAIModels } from "../shared/api"
 
 export class OpenAIHandler implements ApiHandler {
 	private client: OpenAI
-	private model: string
+	private model: OpenAIModelId
 
 	constructor(configuration: ApiConfiguration) {
 		console.log("Initializing OpenAIHandler")
@@ -19,7 +19,11 @@ export class OpenAIHandler implements ApiHandler {
 		this.client = new OpenAI({
 			apiKey: configuration.apiKey,
 		})
-		this.model = configuration.model || "gpt-4-vision-preview"
+		this.model = (configuration.apiModelId as OpenAIModelId) || "gpt-4o-2024-08-06"
+		if (!openAIModels[this.model]) {
+			console.error(`Invalid OpenAI model: ${this.model}`)
+			throw new Error(`Invalid OpenAI model: ${this.model}`)
+		}
 		console.log(`OpenAIHandler initialized with model: ${this.model}`)
 	}
 
@@ -79,12 +83,8 @@ export class OpenAIHandler implements ApiHandler {
 	getModel(): { id: ApiModelId; info: ModelInfo } {
 		console.log(`Getting model info for: ${this.model}`)
 		return {
-			id: this.model as ApiModelId,
-			info: {
-				name: this.model,
-				description: "OpenAI GPT model",
-				contextLength: 8192, // Adjust based on the specific model
-			},
+			id: this.model,
+			info: openAIModels[this.model],
 		}
 	}
 

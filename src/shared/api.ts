@@ -175,34 +175,13 @@ export const openRouterModels = {
 
 // OpenAI
 export type OpenAIModelId = keyof typeof openAIModels
-export const openAIDefaultModelId: OpenAIModelId = "gpt-4-1106-vision-preview"
+export const openAIDefaultModelId: OpenAIModelId = "gpt-4o-2024-08-06"
 export const openAIModels = {
-	"gpt-4-1106-vision-preview": {
-		maxTokens: 16384,
-		supportsImages: true,
-		supportsPromptCache: false,
-		inputPrice: 10.0, // $10 per million input tokens
-		outputPrice: 30.0, // $30 per million output tokens
-	},
-	"gpt-4-turbo-preview": {
-		maxTokens: 16384,
-		supportsImages: false,
-		supportsPromptCache: false,
-		inputPrice: 10.0,
-		outputPrice: 30.0,
-	},
-	"gpt-4": {
+	"gpt-4o-2024-08-06": {
 		maxTokens: 8192,
 		supportsImages: false,
 		supportsPromptCache: false,
 		inputPrice: 30.0,
 		outputPrice: 60.0,
-	},
-	"gpt-3.5-turbo": {
-		maxTokens: 4096,
-		supportsImages: false,
-		supportsPromptCache: false,
-		inputPrice: 0.5,
-		outputPrice: 1.5,
 	},
 } as const satisfies Record<string, ModelInfo>
