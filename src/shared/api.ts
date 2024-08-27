@@ -262,4 +262,12 @@ export const openAiModels = {
 		inputPrice: 0.0001,
 		outputPrice: 0.0001,
 	},
+	"gpt-4o-2024-08-06": {
+		maxTokens: 16384,
+		supportsImages: true,
+		supportsPromptCache: false,
+		inputPrice: 0.0000025,
+		outputPrice: 0.00001,
+	},
+	
 } as const satisfies Record<string, ModelInfo>
