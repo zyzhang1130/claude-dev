@@ -234,6 +234,16 @@ const ApiOptions = ({ showModelOptions, apiErrorMessage, modelIdErrorMessage, is
 						/>
 					)}
 
+					{selectedModelId === "claude-3-7-sonnet-20250219" && (
+						<VSCodeTextField
+							value={apiConfiguration?.claudeThinkingBudgetTokens?.toString() || ""}
+							style={{ width: "100%", marginTop: 5 }}
+							onInput={handleInputChange("claudeThinkingBudgetTokens")}
+							placeholder="Default: 16000">
+							<span style={{ fontWeight: 500 }}>Thinking Budget Tokens</span>
+						</VSCodeTextField>
+					)}
+
 					<p
 						style={{
 							fontSize: "12px",

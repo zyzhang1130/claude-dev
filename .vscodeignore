@@ -41,5 +41,6 @@ docs/**
 # Include default themes JSON files used in getTheme
 !src/integrations/theme/default-themes/**
 
-# Include icons
+# Include icons and codicons
 !assets/icons/**
+!assets/codicons/**

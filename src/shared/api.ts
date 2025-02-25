@@ -55,6 +55,7 @@ export interface ApiHandlerOptions {
 	azureApiVersion?: string
 	vsCodeLmModelSelector?: any
 	o3MiniReasoningEffort?: string
+	claudeThinkingBudgetTokens?: number
 	qwenApiLine?: string
 }
 
@@ -83,7 +84,7 @@ export type AnthropicModelId = keyof typeof anthropicModels
 export const anthropicDefaultModelId: AnthropicModelId = "claude-3-7-sonnet-20250219"
 export const anthropicModels = {
 	"claude-3-7-sonnet-20250219": {
-		maxTokens: 8192,
+		maxTokens: 20000,
 		contextWindow: 200_000,
 		supportsImages: true,
 		supportsComputerUse: true,

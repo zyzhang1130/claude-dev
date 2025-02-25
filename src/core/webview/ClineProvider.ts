@@ -328,13 +328,7 @@ export class ClineProvider implements vscode.WebviewViewProvider {
 		// https://github.com/microsoft/vscode-extension-samples/blob/main/webview-codicons-sample/src/extension.ts
 		// we installed this package in the extension so that we can access it how its intended from the extension (the font file is likely bundled in vscode), and we just import the css fileinto our react app we don't have access to it
 		// don't forget to add font-src ${webview.cspSource};
-		const codiconsUri = getUri(webview, this.context.extensionUri, [
-			"node_modules",
-			"@vscode",
-			"codicons",
-			"dist",
-			"codicon.css",
-		])
+		const codiconsUri = getUri(webview, this.context.extensionUri, ["assets", "codicons", "codicon.css"])
 
 		// const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, "assets", "main.js"))
 

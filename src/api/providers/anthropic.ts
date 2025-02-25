@@ -41,8 +41,16 @@ export class AnthropicHandler implements ApiHandler {
 				stream = await this.client.beta.promptCaching.messages.create(
 					{
 						model: modelId,
-						max_tokens: model.info.maxTokens || 8192,
-						temperature: 0,
+						max_tokens: model.info.maxTokens || 20000,
+						temperature: 1,
+						...(modelId === "claude-3-7-sonnet-20250219"
+							? {
+									thinking: {
+										type: "enabled",
+										budget_tokens: this.options.claudeThinkingBudgetTokens || 16000,
+									},
+								}
+							: {}),
 						system: [
 							{
 								text: systemPrompt,
@@ -109,8 +117,8 @@ export class AnthropicHandler implements ApiHandler {
 			default: {
 				stream = (await this.client.messages.create({
 					model: modelId,
-					max_tokens: model.info.maxTokens || 8192,
-					temperature: 0,
+					max_tokens: model.info.maxTokens || 20000,
+					temperature: 1,
 					system: [{ text: systemPrompt, type: "text" }],
 					messages,
 					// tools,
