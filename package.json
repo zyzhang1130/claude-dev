@@ -157,6 +157,16 @@
 					"default": "full",
 					"description": "Controls MCP inclusion in prompts, reduces token usage if you only need access to certain functionality."
 				},
+				"cline.openai.o3miniReasoningEffort": {
+					"type": "string",
+					"enum": [
+						"low",
+						"medium",
+						"high"
+					],
+					"default": "high",
+					"description": "Set the reasoning effort level for the o3‑mini model when using the OpenAI API provider."
+				},
 				"cline.enableCheckpoints": {
 					"type": "boolean",
 					"default": true,

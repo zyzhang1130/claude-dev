@@ -11,6 +11,16 @@ import {
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { ApiStream } from "../transform/stream"
 
+// Extended type for model parameters
+type ExtendedChatCompletionParams = {
+	model: string
+	messages: OpenAI.Chat.ChatCompletionMessageParam[]
+	reasoning_effort?: "low" | "medium" | "high"
+	stream?: boolean
+	stream_options?: { include_usage: boolean }
+	temperature?: number
+}
+
 export class OpenAiNativeHandler implements ApiHandler {
 	private options: ApiHandlerOptions
 	private client: OpenAI
@@ -44,12 +54,16 @@ export class OpenAiNativeHandler implements ApiHandler {
 				break
 			}
 			case "o3-mini": {
-				const stream = await this.client.chat.completions.create({
+				const params: any = {
 					model: this.getModel().id,
-					messages: [{ role: "developer", content: systemPrompt }, ...convertToOpenAiMessages(messages)],
+					messages: [{ role: "system", content: systemPrompt }, ...convertToOpenAiMessages(messages)],
+					reasoning_effort: this.options.reasoningEffort || "medium", // Use configured value or default to medium
 					stream: true,
 					stream_options: { include_usage: true },
-				})
+				}
+				const stream = (await this.client.chat.completions.create(params, {
+					stream: true,
+				})) as unknown as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>
 				for await (const chunk of stream) {
 					const delta = chunk.choices[0]?.delta
 					if (delta?.content) {
@@ -69,14 +83,16 @@ export class OpenAiNativeHandler implements ApiHandler {
 				break
 			}
 			default: {
-				const stream = await this.client.chat.completions.create({
+				const params: any = {
 					model: this.getModel().id,
-					// max_completion_tokens: this.getModel().info.maxTokens,
 					temperature: 0,
 					messages: [{ role: "system", content: systemPrompt }, ...convertToOpenAiMessages(messages)],
 					stream: true,
 					stream_options: { include_usage: true },
-				})
+				}
+				const stream = (await this.client.chat.completions.create(params, {
+					stream: true,
+				})) as unknown as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>
 
 				for await (const chunk of stream) {
 					const delta = chunk.choices[0]?.delta
